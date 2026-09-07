@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>CORE BOUNCE</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <div>
+      <div class="title">CORE BOUNCE</div>
+      <div class="sub">ORIGINAL PINBALL ACTION</div>
+    </div>
+    <div class="hud">
+      <span id="score">SCORE 000000</span>
+      <span id="lives">CORE × 3</span>
+    </div>
+  </header>
+
+  <main>
+    <canvas id="game"></canvas>
+
+    <div id="startScreen" class="overlay show">
+      <div class="panel">
+        <div class="logoOrb"></div>
+        <h1>CORE BOUNCE</h1>
+        <p>エネルギーコアを弾いて<br>暴走AIの中枢を突破せよ。</p>
+        <button id="startBtn">START</button>
+        <small>左半分タップ：左フリッパー<br>右半分タップ：右フリッパー</small>
+      </div>
+    </div>
+
+    <div id="gameOver" class="overlay">
+      <div class="panel">
+        <h2 id="resultTitle">SYSTEM DOWN</h2>
+        <p id="finalScore">SCORE 0</p>
+        <button id="retryBtn">RETRY</button>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <button id="leftBtn" aria-label="left flipper">◀ LEFT</button>
+    <button id="rightBtn" aria-label="right flipper">RIGHT ▶</button>
+  </footer>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
