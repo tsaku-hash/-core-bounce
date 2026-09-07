@@ -151,10 +151,7 @@ function buildBoard(){
     {x:W*.67,y:H*.44,r:24},
     {x:W*.50,y:H*.58,r:28}
   ];
-  bars=[
-    makeBar(W*.26,H*.36,68,-0.62,0.08,1.0),
-    makeBar(W*.74,H*.36,68, 0.62,0.08,1.0),
-  ];
+  bars=[];
 }
 function spawnStage(n){
   monsters = [
@@ -253,25 +250,16 @@ function collideSegmentBar(bar){
     const nx=dx/d, ny=dy/d;
     ball.x=px+nx*min; ball.y=py+ny*min;
 
-    // 途中バーでもかなり強く飛ぶように強化。
+    // 補助バーは方向を変える程度。主役は下のメインフリッパー。
     const dot=ball.vx*nx+ball.vy*ny;
     if(dot<0){
       ball.vx-=2*dot*nx;
       ball.vy-=2*dot*ny;
     }
-
-    // バーの向きに沿った勢いと、法線方向の跳ね返りを大きくする
-    const tangentX = Math.cos(bar.angle);
-    const tangentY = Math.sin(bar.angle);
-    ball.vx += nx*170 + tangentX*120;
-    ball.vy += ny*170 + tangentY*120;
-
-    // 上方向へ飛びやすくする
-    if(ball.vy > -320) ball.vy -= 240;
-
-    // 最低速度をしっかり確保
-    speedUpBall(620);
-    const sp=Math.hypot(ball.vx,ball.vy), maxSp=980;
+    ball.vx += nx*55;
+    ball.vy += ny*55;
+    speedUpBall(390);
+    const sp=Math.hypot(ball.vx,ball.vy), maxSp=760;
     if(sp>maxSp){
       ball.vx = ball.vx/sp*maxSp;
       ball.vy = ball.vy/sp*maxSp;
@@ -355,7 +343,6 @@ function update(dt){
   if(comboTimer<=0){ comboTimer=0; combo=0; }
   if(stageMessageTimer>0) stageMessageTimer -= dt;
 
-  bars.forEach(bar=>{ bar.t+=dt; bar.angle = bar.baseAngle + Math.sin(bar.t*bar.speed)*bar.amp; });
   monsters.forEach(m=>{ m.t += dt; m.y = m.baseY + Math.sin(m.t*1.7 + m.wobble)*6; });
 
   ball.vy += 520*dt;
@@ -376,7 +363,6 @@ function update(dt){
   collideFlipper(flippers.left,leftPressed);
   collideFlipper(flippers.right,rightPressed);
   bumpers.forEach(b=>{ if(collideCircle(b,1.12,80)) sfx.bumper(); });
-  bars.forEach(bar=>collideSegmentBar(bar));
 
   monsters.forEach(m=>{
     if(m.hp>0 && collideMonster(m)){
@@ -617,7 +603,6 @@ function draw(){
 
   drawBoard();
   bumpers.forEach(drawBumper);
-  bars.forEach(drawBar);
   monsters.forEach(drawMonster);
 
   ctx.strokeStyle="#36759a"; ctx.lineWidth=5;
