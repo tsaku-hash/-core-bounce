@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>CORE BOUNCE - STAGE THEMES V6</title>
+<title>CORE BOUNCE - AUDIO BOOST V7</title>
 <style>
 
 :root{--bg:#07111e;--panel:#0d1e31;--line:#65e9ff;--text:#f4fbff}
@@ -38,7 +38,7 @@ footer button:active{transform:translateY(1px);filter:brightness(1.25)}
   <header>
     <div>
       <div class="title">CORE BOUNCE</div>
-      <div class="sub">STAGE THEMES V6</div>
+      <div class="sub">AUDIO BOOST V7</div>
     </div>
     <div class="hudWrap">
       <div class="hud">
@@ -57,7 +57,7 @@ footer button:active{transform:translateY(1px);filter:brightness(1.25)}
       <div class="panel">
         <div class="logoOrb"></div>
         <h1>CORE BOUNCE</h1>
-        <p>序盤は長いフリッパーで固定。<br>進むほど短くなり、移動も解禁。特別ステージも登場。</p>
+        <p>BGMあり。青バンパーで加速。<br>タイミングよく弾くとNICE!でさらに加速。</p>
         <button id="startBtn" type="button" onclick="startGame()">START</button>
         <small>左半分タップ：左フリッパー / 右半分タップ：右フリッパー<br>STAGE 1はモンスター1発で撃破</small>
       </div>
@@ -99,6 +99,8 @@ let leftPressed=false,rightPressed=false;
 let shake=0,last=0;
 let particles=[],debris=[],bumpers=[],bars=[],monsters=[];
 let combo=0,comboTimer=0,stageMessageTimer=0;
+let niceTimer=0;
+let niceText="";
 
 const ball={x:0,y:0,r:11,vx:0,vy:0};
 const flippers={
@@ -164,7 +166,7 @@ function initAudio(){
     if(!AC) return false;
     audioCtx = new AC();
     masterGain = audioCtx.createGain();
-    masterGain.gain.value = 0.22;
+    masterGain.gain.value = 0.32;
     masterGain.connect(audioCtx.destination);
     return true;
   }catch(e){
@@ -215,16 +217,35 @@ function stopMusic(){ if(musicTimer){ clearInterval(musicTimer); musicTimer=null
 function startMusic(){
   stopMusic();
   if(!audioEnabled) return;
-  initAudio();
-  let step=0;
-  const notes=[110,0,165,0,147,0,196,0,110,0,220,0,165,0,147,0];
-  musicTimer=setInterval(()=>{
-    if(!running || !audioEnabled) return;
-    const f=notes[step%notes.length];
-    if(f) tone(f,.18,"triangle",.035);
-    if(step%4===0) tone(55,.11,"sine",.025);
-    step++;
-  },230);
+  try{
+    initAudio();
+    if(!audioCtx) return;
+
+    let step=0;
+    // 少しゲームらしい明るい電子BGM。外部音源は使わずWeb Audioで生成。
+    const bass=[110,110,147,110,165,147,196,165];
+    const lead=[440,0,523,0,659,523,587,0,494,0,587,0,659,784,659,0];
+
+    musicTimer=setInterval(()=>{
+      if(!running || !audioEnabled) return;
+
+      const b=bass[Math.floor(step/2)%bass.length];
+      if(step%2===0){
+        tone(b,.19,"triangle",.050);
+      }
+
+      const l=lead[step%lead.length];
+      if(l){
+        tone(l,.13,"square",.040);
+      }
+
+      if(step%4===0){
+        tone(55,.10,"sine",.035);
+      }
+
+      step++;
+    },185);
+  }catch(e){}
 }
 function setAudio(on){
   audioEnabled=on;
@@ -348,7 +369,10 @@ function resetBall(initial=false){
   ball.vy=initial?0:-325;
 }
 function startGame(){
-  try{ initAudio(); }catch(e){}
+  try{
+    initAudio();
+    if(audioCtx && audioCtx.state==="suspended") audioCtx.resume();
+  }catch(e){}
   score=0; lives=3; stage=1;
   flipperShift=0; applyFlipperPositions();
   particles=[]; debris=[]; combo=0; comboTimer=0;
@@ -497,7 +521,7 @@ function collideSegmentBar(bar){
 }
 function collideFlipper(f,pressed){
   const target=pressed?f.active:f.rest;
-  f.angle += (target-f.angle)*0.38;
+  f.angle += (target-f.angle)*0.40;
 
   const x2=f.x+Math.cos(f.angle)*f.len;
   const y2=f.y+Math.sin(f.angle)*f.len;
@@ -513,30 +537,48 @@ function collideFlipper(f,pressed){
     ball.x=px+nx*min;
     ball.y=py+ny*min;
 
-    // 先端で打つほど大きく飛ぶ。タップ中はさらに強い。
-    const tipPower = 0.72 + t*0.95;
-    const pressPower = pressed ? 1.0 : 0.62;
-    const launch = 335 * tipPower * pressPower;
-
-    // 基本は強く上方向へ。左右のフリッパーで少し横方向も付ける。
-    const side = (f===flippers.left ? 1 : -1);
-    ball.vx = ball.vx*0.45 + side*(105 + 115*t) + nx*launch*0.30;
-    ball.vy = -Math.max(360, 400 + 150*t) - Math.abs(ny)*launch*0.16;
-
-    // フリッパー先端なら画面上部まで届く速度を保証。
     const rules=stageRules();
-    const minLaunchSpeed = pressed ? (t>0.65 ? rules.bounceMax : rules.bounceMin) : 390;
-    speedUpBall(minLaunchSpeed);
 
-    const sp=Math.hypot(ball.vx,ball.vy), maxSp=760;
+    // 「タイミングよく弾けた」判定:
+    // ボールが下向きに来ていて、ボタンを押していて、フリッパー中央〜先端で当たった時。
+    const perfect = pressed && ball.vy>80 && t>0.42;
+
+    const tipPower = 0.72 + t*0.78;
+    const launch = (perfect ? 470 : 335) * tipPower;
+
+    const side=(f===flippers.left ? 1 : -1);
+
+    ball.vx = ball.vx*0.44
+      + side*(perfect ? (135+145*t) : (95+105*t))
+      + nx*launch*(perfect ? .36 : .27);
+
+    ball.vy = -Math.max(
+      perfect ? 470 : 360,
+      (perfect ? 505 : 400) + (perfect ? 205 : 150)*t
+    ) - Math.abs(ny)*launch*(perfect ? .19 : .15);
+
+    if(perfect){
+      // 成功時だけ明確な追加加速
+      speedUpBall(Math.min(rules.bounceMax+95, 735));
+      niceText="NICE!";
+      niceTimer=.65;
+      score+=60;
+      shake=8;
+      addGlowBurst(ball.x,ball.y,12,"#fff4a8");
+      tone(880,.07,"square",.10,1180);
+    }else{
+      speedUpBall(rules.bounceMin);
+      score+=15;
+      shake=5;
+      addGlowBurst(ball.x,ball.y,6,"#c9fbff");
+    }
+
+    const sp=Math.hypot(ball.vx,ball.vy);
+    const maxSp=perfect ? 790 : 710;
     if(sp>maxSp){
       ball.vx=ball.vx/sp*maxSp;
       ball.vy=ball.vy/sp*maxSp;
     }
-
-    score+=15;
-    shake=pressed ? 7 : 4;
-    addGlowBurst(ball.x,ball.y,pressed?9:5,"#c9fbff");
   }
 }
 function damageMonster(m){
@@ -566,6 +608,7 @@ function update(dt){
   comboTimer -= dt;
   if(comboTimer<=0){ comboTimer=0; combo=0; }
   if(stageMessageTimer>0) stageMessageTimer -= dt;
+  if(niceTimer>0) niceTimer-=dt;
 
   monsters.forEach(m=>{
     m.t += dt;
@@ -634,7 +677,7 @@ function update(dt){
 
   collideFlipper(flippers.left,leftPressed);
   collideFlipper(flippers.right,rightPressed);
-  bumpers.forEach(b=>{ if(collideCircle(b,1.035,80)) sfx.bumper(); });
+  bumpers.forEach(b=>{ if(collideCircle(b,1.11,80)){ speedUpBall(455); sfx.bumper(); } });
 
   monsters.forEach(m=>{
     if(m.hp>0 && collideMonster(m)){
@@ -967,6 +1010,16 @@ function drawMessages(){
       ctx.fillText("序盤はフリッパー固定", W/2, H-18);
     }
   }
+  if(niceTimer>0){
+    ctx.save();
+    ctx.globalAlpha=Math.min(1,niceTimer*2);
+    ctx.fillStyle="#fff5a8";
+    ctx.textAlign="center";
+    ctx.font="900 30px system-ui";
+    ctx.fillText(niceText,W/2,H*.72);
+    ctx.restore();
+  }
+
   if(stageMessageTimer>0){
     ctx.fillStyle="rgba(255,255,255,.92)";
     ctx.textAlign="center";
