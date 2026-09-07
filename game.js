@@ -253,16 +253,25 @@ function collideSegmentBar(bar){
     const nx=dx/d, ny=dy/d;
     ball.x=px+nx*min; ball.y=py+ny*min;
 
-    // 補助バーは方向を変える程度。主役は下のメインフリッパー。
+    // 途中バーでもかなり強く飛ぶように強化。
     const dot=ball.vx*nx+ball.vy*ny;
     if(dot<0){
       ball.vx-=2*dot*nx;
       ball.vy-=2*dot*ny;
     }
-    ball.vx += nx*55;
-    ball.vy += ny*55;
-    speedUpBall(390);
-    const sp=Math.hypot(ball.vx,ball.vy), maxSp=760;
+
+    // バーの向きに沿った勢いと、法線方向の跳ね返りを大きくする
+    const tangentX = Math.cos(bar.angle);
+    const tangentY = Math.sin(bar.angle);
+    ball.vx += nx*170 + tangentX*120;
+    ball.vy += ny*170 + tangentY*120;
+
+    // 上方向へ飛びやすくする
+    if(ball.vy > -320) ball.vy -= 240;
+
+    // 最低速度をしっかり確保
+    speedUpBall(620);
+    const sp=Math.hypot(ball.vx,ball.vy), maxSp=980;
     if(sp>maxSp){
       ball.vx = ball.vx/sp*maxSp;
       ball.vy = ball.vy/sp*maxSp;
