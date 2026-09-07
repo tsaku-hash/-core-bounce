@@ -785,22 +785,6 @@ function draw(){
   drainZones.forEach(([x1,x2])=>{
     ctx.fillRect(x1,H-72,x2-x1,72);
   });
-  ctx.beginPath(); ctx.moveTo(W-18,H-128); ctx.lineTo(W*.69,H-98); ctx.stroke();
-
-  // 落下穴の表示
-  const drainL=W*.35, drainR=W*.65;
-  const dg=ctx.createLinearGradient(0,H-85,0,H);
-  dg.addColorStop(0,"rgba(255,90,90,.12)");
-  dg.addColorStop(1,"rgba(255,20,40,.30)");
-  ctx.fillStyle=dg;
-  ctx.fillRect(drainL,H-72,drainR-drainL,72);
-  ctx.strokeStyle="rgba(255,105,105,.55)";
-  ctx.lineWidth=2;
-  ctx.beginPath();
-  ctx.moveTo(drainL,H-72);ctx.lineTo(drainL,H-18);
-  ctx.moveTo(drainR,H-72);ctx.lineTo(drainR,H-18);
-  ctx.stroke();
-
   drawFlipper(flippers.left);
   drawFlipper(flippers.right);
   drawBall();
