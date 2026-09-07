@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>レインボーたまご あつめ 3D</title>
+<title>レインボーたまご あつめ 3D トライアル</title>
 <style>
 :root{
-  --ink:#513e59;
-  --pink:#ff78ba;
+  --ink:#533f5a;
+  --pink:#ff79bb;
   --blue:#63cef5;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -24,16 +24,16 @@ body{touch-action:none}
 }
 header{
   display:flex;justify-content:space-between;align-items:center;
-  padding:calc(7px + env(safe-area-inset-top)) 10px 7px;
-  background:rgba(255,255,255,.9);
-  box-shadow:0 4px 18px rgba(80,80,120,.10);
+  padding:calc(8px + env(safe-area-inset-top)) 10px 8px;
+  background:rgba(255,255,255,.92);
+  box-shadow:0 4px 16px rgba(80,80,120,.10);
   z-index:10;
 }
 .title{font-weight:950;font-size:17px;line-height:1.05}
 .title small{display:block;font-size:9px;font-weight:700;opacity:.62;margin-top:4px}
 .hud{display:flex;gap:6px;align-items:center}
 .badge{
-  background:#fff;border-radius:13px;padding:7px 8px;
+  background:#fff;border-radius:14px;padding:7px 8px;
   font-size:11px;font-weight:900;white-space:nowrap;
   box-shadow:0 4px 12px rgba(80,80,120,.10)
 }
@@ -92,17 +92,18 @@ footer{
 #rightBtn{background:linear-gradient(180deg,#7cddff,#55c4ef);box-shadow:0 6px 0 #3da6ce}
 .ctrl:active{transform:translateY(3px)}
 #stunNotice{
-  position:absolute;left:50%;bottom:92px;transform:translateX(-50%);
-  padding:7px 14px;border-radius:18px;background:rgba(255,245,115,.9);
+  position:absolute;left:50%;bottom:94px;transform:translateX(-50%);
+  padding:8px 14px;border-radius:18px;background:rgba(255,245,115,.92);
   font-weight:950;display:none;z-index:12;box-shadow:0 4px 14px rgba(80,70,30,.15)
 }
+.small{font-size:12px;opacity:.72}
 </style>
 </head>
 <body>
 <div id="app">
 <header>
   <div class="title">🥚 レインボーたまご あつめ 3D
-    <small>ほんものの3D空間でたまごをキャッチ！</small>
+    <small>Three.js で作る本物3Dトライアル版</small>
   </div>
   <div class="hud">
     <div class="badge" id="stageLabel">STAGE 1</div>
@@ -122,7 +123,7 @@ footer{
       <div class="capsule"><div id="capsuleEggs"></div></div>
       <p>30びょうで <b>15こ</b> キャッチ！<br>15しょく集めてBIGレインボーたまごを作ろう。</p>
       <button class="btn" id="startBtn">▶ あそぶ！</button>
-      <p style="font-size:12px;opacity:.68">操作は下の「ひだり」「みぎ」だけ。</p>
+      <p class="small">🍎・🍙を取ると1秒、💣を取ると2秒うごけないよ。</p>
     </div>
   </div>
 
@@ -181,7 +182,7 @@ renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.15;
+renderer.toneMappingExposure=1.12;
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0xaee8ff);
@@ -191,9 +192,9 @@ const camera=new THREE.PerspectiveCamera(48,1,.1,100);
 camera.position.set(0,8.8,12.5);
 camera.lookAt(0,0,-4.8);
 
-const hemi=new THREE.HemisphereLight(0xffffff,0x78a55f,2.1);
+const hemi=new THREE.HemisphereLight(0xffffff,0x78a55f,2.0);
 scene.add(hemi);
-const sun=new THREE.DirectionalLight(0xfff4dd,3.2);
+const sun=new THREE.DirectionalLight(0xfff4dd,3.0);
 sun.position.set(-7,12,8);
 sun.castShadow=true;
 sun.shadow.mapSize.set(1024,1024);
@@ -215,11 +216,10 @@ const eggNames=[
 let stage=1,finalMode=false,running=false;
 let caught=0,target=15,timeLeft=30,spawnClock=0;
 let collectedColors=[];
-let items=[];
+let items=[], endingRain=[];
 let leftHeld=false,rightHeld=false;
 let stunTimer=0;
 let last=performance.now();
-let endingRain=[];
 
 const stageLabel=document.getElementById("stageLabel");
 const timerLabel=document.getElementById("timerLabel");
@@ -371,10 +371,8 @@ function makeBasket(){
   const g=new THREE.Group();
   const body=new THREE.Mesh(new THREE.BoxGeometry(1.25,.38,.60),mat(0xff84c2,.30,.02));
   body.position.y=.32;g.add(body);
-  const rim=new THREE.Mesh(new THREE.TorusGeometry(.48,.045,10,28,Math.PI),
-    mat(0xfff6fb,.25));
-  rim.rotation.x=Math.PI/2;rim.rotation.z=Math.PI;
-  rim.position.set(0,.60,0);g.add(rim);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.48,.045,10,28,Math.PI), mat(0xfff6fb,.25));
+  rim.rotation.x=Math.PI/2;rim.rotation.z=Math.PI;rim.position.set(0,.60,0);g.add(rim);
   for(const x of [-.42,.42]){
     const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.12,20),mat(0x47404b,.38,.05));
     wheel.rotation.z=Math.PI/2;wheel.position.set(x,.10,.28);g.add(wheel);
@@ -387,11 +385,9 @@ function makeBasket(){
 }
 
 function buildWorld(){
-  // ground
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(22,42),mat(0x8ed875,.92));
   ground.rotation.x=-Math.PI/2;ground.position.set(0,-.03,-7);ground.receiveShadow=true;scene.add(ground);
 
-  // two physical sloped lanes
   const laneMat=mat(0xd9a35d,.80);
   for(const x of [-2.15,2.15]){
     const lane=new THREE.Mesh(new THREE.BoxGeometry(3.1,.16,17),laneMat);
@@ -400,22 +396,18 @@ function buildWorld(){
     lane.receiveShadow=true;scene.add(lane);
   }
 
-  // decorative side hills
   for(const x of [-6.0,6.0]){
     const hill=new THREE.Mesh(new THREE.SphereGeometry(5.4,32,18),mat(0x9ce07a,.95));
     hill.scale.set(1.2,.35,1.6);hill.position.set(x,-.85,-9);scene.add(hill);
   }
 
-  // trees
   [[-5,-5,1.2],[5,-7,1.1],[-5,-12,.9],[5,-13,1.2],[-4,1,.75],[4,1,.8]]
     .forEach(v=>makeTree(...v));
 
-  // chickens
   makeChicken(-2.4,-13.3);
   makeChicken(0,-13.6);
   makeChicken(2.4,-13.3);
 
-  // fence posts
   const wood=mat(0xa8744f,.85);
   for(const sx of [-1,1]){
     for(let i=0;i<7;i++){
@@ -509,7 +501,8 @@ function finishStage(){
   }
   if(finalMode){startEnding();return}
   collectedColors.push(eggColors[stage-1]);
-  tone(523,.14,"triangle",.09);setTimeout(()=>tone(659,.14,"triangle",.09),120);
+  tone(523,.14,"triangle",.09);
+  setTimeout(()=>tone(659,.14,"triangle",.09),120);
   setTimeout(()=>tone(784,.20,"triangle",.09),240);
   renderCapsule(document.getElementById("capsuleEggsClear"));
   document.getElementById("rewardText").innerHTML="<b>"+eggNames[stage-1]+"</b> のたまごをGET！";
@@ -562,7 +555,8 @@ function update(dt){
   }
 
   if(running){
-    timeLeft-=dt;if(timeLeft<=0){timeLeft=0;updateHud();finishStage();return}
+    timeLeft-=dt;
+    if(timeLeft<=0){timeLeft=0;updateHud();finishStage();return}
     const dir=stunTimer>0?0:(rightHeld?1:0)-(leftHeld?1:0);
     basket.position.x+=dir*5.5*dt;
     basket.position.x=Math.max(-4.05,Math.min(4.05,basket.position.x));
