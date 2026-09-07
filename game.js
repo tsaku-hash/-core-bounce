@@ -266,8 +266,8 @@ function collideMonster(m){
     ball.x=m.x+nx*min; ball.y=m.y+ny*min;
     const dot=ball.vx*nx+ball.vy*ny;
     if(dot<0){ ball.vx-=2*dot*nx; ball.vy-=2*dot*ny; }
-    ball.vx*=1.08; ball.vy*=1.08;
-    speedUpBall(420);
+    ball.vx*=1.01; ball.vy*=1.01;
+    speedUpBall(360);
     score += 100;
     shake = 6;
     addGlowBurst(ball.x,ball.y,10,"#ffe3ad");
@@ -336,18 +336,18 @@ function collideFlipper(f,pressed){
     // 先端で打つほど大きく飛ぶ。タップ中はさらに強い。
     const tipPower = 0.72 + t*0.95;
     const pressPower = pressed ? 1.0 : 0.62;
-    const launch = 390 * tipPower * pressPower;
+    const launch = 285 * tipPower * pressPower;
 
     // 基本は強く上方向へ。左右のフリッパーで少し横方向も付ける。
     const side = (f===flippers.left ? 1 : -1);
-    ball.vx = ball.vx*0.35 + side*(150 + 170*t) + nx*launch*0.42;
-    ball.vy = -Math.max(390, 440 + 180*t) - Math.abs(ny)*launch*0.18;
+    ball.vx = ball.vx*0.45 + side*(105 + 115*t) + nx*launch*0.30;
+    ball.vy = -Math.max(330, 365 + 135*t) - Math.abs(ny)*launch*0.14;
 
     // フリッパー先端なら画面上部まで届く速度を保証。
-    const minLaunchSpeed = pressed ? (t>0.65 ? 520 : 470) : 400;
+    const minLaunchSpeed = pressed ? (t>0.65 ? 430 : 395) : 350;
     speedUpBall(minLaunchSpeed);
 
-    const sp=Math.hypot(ball.vx,ball.vy), maxSp=690;
+    const sp=Math.hypot(ball.vx,ball.vy), maxSp=560;
     if(sp>maxSp){
       ball.vx=ball.vx/sp*maxSp;
       ball.vy=ball.vy/sp*maxSp;
@@ -456,7 +456,7 @@ function update(dt){
 
   collideFlipper(flippers.left,leftPressed);
   collideFlipper(flippers.right,rightPressed);
-  bumpers.forEach(b=>{ if(collideCircle(b,1.12,80)) sfx.bumper(); });
+  bumpers.forEach(b=>{ if(collideCircle(b,0.96,80)) sfx.bumper(); });
 
   monsters.forEach(m=>{
     if(m.hp>0 && collideMonster(m)){
