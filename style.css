@@ -6,23 +6,60 @@
   --text:#f4fbff;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:#030912;color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
+html,body{
+  margin:0;height:100%;background:#030912;color:var(--text);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden
+}
 body{touch-action:none}
-#app{height:100dvh;display:grid;grid-template-rows:auto 1fr auto;background:radial-gradient(circle at 50% 20%,#102c45 0,#07111e 45%,#02070d 100%)}
-header{display:flex;justify-content:space-between;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 14px 8px;border-bottom:1px solid rgba(101,233,255,.2)}
+#app{
+  height:100dvh;display:grid;grid-template-rows:auto 1fr auto;
+  background:radial-gradient(circle at 50% 20%,#102c45 0,#07111e 45%,#02070d 100%)
+}
+header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 8px;
+  border-bottom:1px solid rgba(101,233,255,.2)
+}
 .title{font-weight:900;letter-spacing:.12em}
 .sub{font-size:10px;opacity:.55;letter-spacing:.12em}
+.hudWrap{display:flex;align-items:center;gap:10px}
 .hud{display:flex;flex-direction:column;align-items:flex-end;font-size:12px;font-weight:700}
+.soundBtn{
+  width:38px;height:38px;border-radius:12px;border:1px solid rgba(101,233,255,.35);
+  background:rgba(10,28,47,.9);color:#fff;font-size:18px
+}
 main{position:relative;min-height:0}
 canvas{width:100%;height:100%;display:block}
-footer{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 10px calc(10px + env(safe-area-inset-bottom))}
-footer button{height:56px;border:1px solid rgba(101,233,255,.4);border-radius:16px;background:linear-gradient(#12304c,#0a1c2f);color:#eaffff;font-weight:900;font-size:16px;box-shadow:inset 0 0 20px rgba(101,233,255,.08)}
+footer{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  padding:10px 10px calc(10px + env(safe-area-inset-bottom))
+}
+footer button{
+  height:56px;border:1px solid rgba(101,233,255,.4);border-radius:16px;
+  background:linear-gradient(#12304c,#0a1c2f);color:#eaffff;font-weight:900;font-size:16px;
+  box-shadow:inset 0 0 20px rgba(101,233,255,.08)
+}
 footer button:active{transform:translateY(1px);filter:brightness(1.25)}
-.overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,4,10,.76);backdrop-filter:blur(8px);z-index:4;padding:20px}
+.overlay{
+  position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  background:rgba(0,4,10,.76);backdrop-filter:blur(8px);z-index:4;padding:20px
+}
 .overlay.show{display:flex}
-.panel{width:min(360px,92vw);padding:28px;border-radius:24px;background:linear-gradient(180deg,rgba(15,37,59,.96),rgba(7,18,31,.98));border:1px solid rgba(101,233,255,.35);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 30px rgba(101,233,255,.05)}
+.panel{
+  width:min(360px,92vw);padding:28px;border-radius:24px;
+  background:linear-gradient(180deg,rgba(15,37,59,.96),rgba(7,18,31,.98));
+  border:1px solid rgba(101,233,255,.35);text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 30px rgba(101,233,255,.05)
+}
 .panel h1,.panel h2{margin:.3em 0;letter-spacing:.08em}
 .panel p{line-height:1.7;opacity:.9}
 .panel small{display:block;margin-top:16px;line-height:1.6;opacity:.65}
-.panel button{margin-top:8px;width:100%;height:54px;border:none;border-radius:14px;font-weight:900;font-size:18px;color:#03101a;background:linear-gradient(90deg,#6ff0ff,#8effb5)}
-.logoOrb{width:72px;height:72px;margin:0 auto 8px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0 8%,#9df7ff 15%,#38c4ff 38%,#1a64ff 66%,#0e143b 100%);box-shadow:0 0 30px #43e8ff,0 0 70px rgba(67,232,255,.35)}
+.panel button{
+  margin-top:8px;width:100%;height:54px;border:none;border-radius:14px;
+  font-weight:900;font-size:18px;color:#03101a;background:linear-gradient(90deg,#6ff0ff,#8effb5)
+}
+.logoOrb{
+  width:72px;height:72px;margin:0 auto 8px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff 0 8%,#9df7ff 15%,#38c4ff 38%,#1a64ff 66%,#0e143b 100%);
+  box-shadow:0 0 30px #43e8ff,0 0 70px rgba(67,232,255,.35)
+}
