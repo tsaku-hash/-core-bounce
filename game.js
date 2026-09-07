@@ -22,8 +22,8 @@ let combo=0,comboTimer=0,stageMessageTimer=0;
 
 const ball={x:0,y:0,r:11,vx:0,vy:0};
 const flippers={
-  left:{x:0,y:0,len:86,angle:-0.3,rest:-0.3,active:-0.95},
-  right:{x:0,y:0,len:86,angle:Math.PI+0.3,rest:Math.PI+0.3,active:Math.PI+0.95}
+  left:{x:0,y:0,len:74,angle:-0.3,rest:-0.3,active:-0.95},
+  right:{x:0,y:0,len:74,angle:Math.PI+0.3,rest:Math.PI+0.3,active:Math.PI+0.95}
 };
 
 // ------------ AUDIO ------------
@@ -129,7 +129,7 @@ function resize(){
   canvas.width=Math.floor(W*dpr);
   canvas.height=Math.floor(H*dpr);
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  flippers.left.x=W*.42; flippers.right.x=W*.58;
+  flippers.left.x=W*.44; flippers.right.x=W*.56;
   flippers.left.y=flippers.right.y=H-78;
   resetBall(true);
   buildBoard();
@@ -206,8 +206,8 @@ function spawnStage(n){
 }
 function resetBall(initial=false){
   ball.x=W*.5; ball.y=H-130;
-  ball.vx=initial?0:(Math.random()>.5?1:-1)*90;
-  ball.vy=initial?0:-285;
+  ball.vx=initial?0:(Math.random()>.5?1:-1)*115;
+  ball.vy=initial?0:-325;
 }
 function startGame(){
   initAudio();
@@ -336,18 +336,18 @@ function collideFlipper(f,pressed){
     // 先端で打つほど大きく飛ぶ。タップ中はさらに強い。
     const tipPower = 0.72 + t*0.95;
     const pressPower = pressed ? 1.0 : 0.62;
-    const launch = 520 * tipPower * pressPower;
+    const launch = 390 * tipPower * pressPower;
 
     // 基本は強く上方向へ。左右のフリッパーで少し横方向も付ける。
     const side = (f===flippers.left ? 1 : -1);
     ball.vx = ball.vx*0.35 + side*(150 + 170*t) + nx*launch*0.42;
-    ball.vy = -Math.max(470, 540 + 250*t) - Math.abs(ny)*launch*0.24;
+    ball.vy = -Math.max(390, 440 + 180*t) - Math.abs(ny)*launch*0.18;
 
     // フリッパー先端なら画面上部まで届く速度を保証。
-    const minLaunchSpeed = pressed ? (t>0.65 ? 640 : 580) : 470;
+    const minLaunchSpeed = pressed ? (t>0.65 ? 520 : 470) : 400;
     speedUpBall(minLaunchSpeed);
 
-    const sp=Math.hypot(ball.vx,ball.vy), maxSp=820;
+    const sp=Math.hypot(ball.vx,ball.vy), maxSp=690;
     if(sp>maxSp){
       ball.vx=ball.vx/sp*maxSp;
       ball.vy=ball.vy/sp*maxSp;
@@ -410,7 +410,7 @@ function update(dt){
     }
   });
 
-  ball.vy += 430*dt;
+  ball.vy += 485*dt;
   ball.x += ball.vx*dt;
   ball.y += ball.vy*dt;
 
@@ -418,31 +418,40 @@ function update(dt){
   if(ball.x+ball.r>W-12){ ball.x=W-12-ball.r; ball.vx=-Math.abs(ball.vx)*.94; }
   if(ball.y-ball.r<10){ ball.y=10+ball.r; ball.vy=Math.abs(ball.vy)*.94; }
 
-  // 下部の左右レーン。中央は落下穴として空ける。
-  if(ball.y>H-150 && ball.y<H-72){
-    const leftGuideY = H-132 + (ball.x-18)*0.20;
-    const rightGuideY = H-132 + (W-18-ball.x)*0.20;
+  // 下部ガイドは短め。左右にも落下できる隙間を作る。
+  if(ball.y>H-150 && ball.y<H-74){
+    const leftGuideY = H-134 + (ball.x-18)*0.18;
+    const rightGuideY = H-134 + (W-18-ball.x)*0.18;
 
-    // 左外側ガイド
-    if(ball.x<W*.31 && ball.y>leftGuideY && ball.vy>0){
+    // 左ガイドは画面左端〜約26%まで
+    if(ball.x<W*.26 && ball.y>leftGuideY && ball.vy>0){
       ball.y=leftGuideY-2;
-      ball.vy=-Math.abs(ball.vy)*0.62;
-      ball.vx+=55;
+      ball.vy=-Math.abs(ball.vy)*0.52;
+      ball.vx+=42;
     }
 
-    // 右外側ガイド
-    if(ball.x>W*.69 && ball.y>rightGuideY && ball.vy>0){
+    // 右ガイドは約74%〜右端
+    if(ball.x>W*.74 && ball.y>rightGuideY && ball.vy>0){
       ball.y=rightGuideY-2;
-      ball.vy=-Math.abs(ball.vy)*0.62;
-      ball.vx-=55;
+      ball.vy=-Math.abs(ball.vy)*0.52;
+      ball.vx-=42;
     }
   }
 
-  // 中央の落下穴。ここを抜けたら1ライフ減る。
-  const drainLeft=W*.35;
-  const drainRight=W*.65;
-  if(ball.y>H-70 && ball.x>drainLeft && ball.x<drainRight){
-    ball.y=H+60;
+  // 3つのドレインゾーン。
+  // 左右はフリッパー外側、中央はフリッパー間。
+  const leftDrainR=W*.36;
+  const centerDrainL=W*.465;
+  const centerDrainR=W*.535;
+  const rightDrainL=W*.64;
+
+  if(ball.y>H-70){
+    const inLeftDrain = ball.x < leftDrainR;
+    const inCenterDrain = ball.x > centerDrainL && ball.x < centerDrainR;
+    const inRightDrain = ball.x > rightDrainL;
+    if(inLeftDrain || inCenterDrain || inRightDrain){
+      ball.y=H+60;
+    }
   }
 
   collideFlipper(flippers.left,leftPressed);
@@ -750,10 +759,32 @@ function draw(){
   bumpers.forEach(drawBumper);
   monsters.forEach(drawMonster);
 
-  // 下部ガイド。中央は明確に落下穴として空ける。
+  // 下部ガイドを短くして、左右にも落下できる隙間を作る。
   ctx.strokeStyle="#36759a";
   ctx.lineWidth=5;
-  ctx.beginPath(); ctx.moveTo(18,H-128); ctx.lineTo(W*.31,H-98); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(18,H-128);
+  ctx.lineTo(W*.26,H-103);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(W-18,H-128);
+  ctx.lineTo(W*.74,H-103);
+  ctx.stroke();
+
+  // 落下可能エリアを薄く表示（左・中央・右）
+  const drainZones=[
+    [0,W*.36],
+    [W*.465,W*.535],
+    [W*.64,W]
+  ];
+  const dg=ctx.createLinearGradient(0,H-82,0,H);
+  dg.addColorStop(0,"rgba(255,95,95,.05)");
+  dg.addColorStop(1,"rgba(255,25,45,.22)");
+  ctx.fillStyle=dg;
+  drainZones.forEach(([x1,x2])=>{
+    ctx.fillRect(x1,H-72,x2-x1,72);
+  });
   ctx.beginPath(); ctx.moveTo(W-18,H-128); ctx.lineTo(W*.69,H-98); ctx.stroke();
 
   // 落下穴の表示
