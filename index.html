@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>CORE BOUNCE - MOVE FLIPPERS V5</title>
+<title>CORE BOUNCE - STAGE THEMES V6</title>
 <style>
 
 :root{--bg:#07111e;--panel:#0d1e31;--line:#65e9ff;--text:#f4fbff}
@@ -38,7 +38,7 @@ footer button:active{transform:translateY(1px);filter:brightness(1.25)}
   <header>
     <div>
       <div class="title">CORE BOUNCE</div>
-      <div class="sub">MOVE FLIPPERS V5</div>
+      <div class="sub">STAGE THEMES V6</div>
     </div>
     <div class="hudWrap">
       <div class="hud">
@@ -57,7 +57,7 @@ footer button:active{transform:translateY(1px);filter:brightness(1.25)}
       <div class="panel">
         <div class="logoOrb"></div>
         <h1>CORE BOUNCE</h1>
-        <p>青いバンパーは少しだけ加速。<br>フリッパー付近を左右ドラッグすると位置を動かせます。</p>
+        <p>序盤は長いフリッパーで固定。<br>進むほど短くなり、移動も解禁。特別ステージも登場。</p>
         <button id="startBtn" type="button" onclick="startGame()">START</button>
         <small>左半分タップ：左フリッパー / 右半分タップ：右フリッパー<br>STAGE 1はモンスター1発で撃破</small>
       </div>
@@ -111,8 +111,39 @@ let flipperDragging = false;
 let flipperDragStartX = 0;
 let flipperShiftStart = 0;
 
+function stageRules(){
+  // 序盤はやさしく、進むほど落ちやすくする。
+  if(stage<=2){
+    return {len:92, movable:false, sideDrain:.22, centerDrain:.025, guideEnd:.30, bounceMin:500, bounceMax:640};
+  }
+  if(stage<=4){
+    return {len:86, movable:false, sideDrain:.25, centerDrain:.04, guideEnd:.28, bounceMin:520, bounceMax:660};
+  }
+  if(stage<=6){
+    return {len:80, movable:true, sideDrain:.29, centerDrain:.055, guideEnd:.27, bounceMin:535, bounceMax:680};
+  }
+  if(stage<=9){
+    return {len:74, movable:true, sideDrain:.33, centerDrain:.07, guideEnd:.25, bounceMin:550, bounceMax:700};
+  }
+  return {len:68, movable:true, sideDrain:.36, centerDrain:.085, guideEnd:.23, bounceMin:565, bounceMax:720};
+}
+
+function stageTheme(){
+  const cycle=(stage-1)%6;
+  if(cycle===2) return "color";
+  if(cycle===4) return "fire";
+  if(cycle===5) return "neon";
+  return "normal";
+}
+
 function applyFlipperPositions(){
-  // 2本のフリッパーをセットで左右移動。
+  const rules=stageRules();
+  flippers.left.len=rules.len;
+  flippers.right.len=rules.len;
+
+  // 固定ステージでは中央へ戻す。移動解禁後だけ左右へ動かせる。
+  if(!rules.movable) flipperShift=0;
+
   const maxShift = W * 0.16;
   flipperShift = clamp(flipperShift, -maxShift, maxShift);
   flippers.left.x = W*.44 + flipperShift;
@@ -308,6 +339,7 @@ function spawnStage(n){
   }
 
   stageMessageTimer = 1.8;
+  applyFlipperPositions();
   updateHud();
 }
 function resetBall(initial=false){
@@ -351,11 +383,14 @@ canvas.addEventListener("pointerdown", e=>{
 
   // 下部のフリッパー周辺はドラッグで横移動。
   if(y>H*.72){
-    flipperDragging=true;
-    flipperDragStartX=x;
-    flipperShiftStart=flipperShift;
-    try{canvas.setPointerCapture(e.pointerId);}catch(err){}
-    return;
+    const rules=stageRules();
+    if(rules.movable){
+      flipperDragging=true;
+      flipperDragStartX=x;
+      flipperShiftStart=flipperShift;
+      try{canvas.setPointerCapture(e.pointerId);}catch(err){}
+      return;
+    }
   }
 
   // 上側をタップした時は従来どおり左右フリップ。
@@ -481,18 +516,19 @@ function collideFlipper(f,pressed){
     // 先端で打つほど大きく飛ぶ。タップ中はさらに強い。
     const tipPower = 0.72 + t*0.95;
     const pressPower = pressed ? 1.0 : 0.62;
-    const launch = 285 * tipPower * pressPower;
+    const launch = 335 * tipPower * pressPower;
 
     // 基本は強く上方向へ。左右のフリッパーで少し横方向も付ける。
     const side = (f===flippers.left ? 1 : -1);
     ball.vx = ball.vx*0.45 + side*(105 + 115*t) + nx*launch*0.30;
-    ball.vy = -Math.max(330, 365 + 135*t) - Math.abs(ny)*launch*0.14;
+    ball.vy = -Math.max(360, 400 + 150*t) - Math.abs(ny)*launch*0.16;
 
     // フリッパー先端なら画面上部まで届く速度を保証。
-    const minLaunchSpeed = pressed ? (t>0.65 ? 430 : 395) : 350;
+    const rules=stageRules();
+    const minLaunchSpeed = pressed ? (t>0.65 ? rules.bounceMax : rules.bounceMin) : 390;
     speedUpBall(minLaunchSpeed);
 
-    const sp=Math.hypot(ball.vx,ball.vy), maxSp=560;
+    const sp=Math.hypot(ball.vx,ball.vy), maxSp=760;
     if(sp>maxSp){
       ball.vx=ball.vx/sp*maxSp;
       ball.vy=ball.vy/sp*maxSp;
@@ -563,32 +599,29 @@ function update(dt){
   if(ball.x+ball.r>W-12){ ball.x=W-12-ball.r; ball.vx=-Math.abs(ball.vx)*.94; }
   if(ball.y-ball.r<10){ ball.y=10+ball.r; ball.vy=Math.abs(ball.vy)*.94; }
 
-  // 下部ガイドは短め。左右にも落下できる隙間を作る。
+  // ステージが進むほどガイドが短くなり、落下ゾーンが広がる。
+  const rules=stageRules();
   if(ball.y>H-150 && ball.y<H-74){
     const leftGuideY = H-134 + (ball.x-18)*0.18;
     const rightGuideY = H-134 + (W-18-ball.x)*0.18;
 
-    // 左ガイドは画面左端〜約26%まで
-    if(ball.x<W*.26 && ball.y>leftGuideY && ball.vy>0){
+    if(ball.x<W*rules.guideEnd && ball.y>leftGuideY && ball.vy>0){
       ball.y=leftGuideY-2;
       ball.vy=-Math.abs(ball.vy)*0.52;
       ball.vx+=42;
     }
 
-    // 右ガイドは約74%〜右端
-    if(ball.x>W*.74 && ball.y>rightGuideY && ball.vy>0){
+    if(ball.x>W*(1-rules.guideEnd) && ball.y>rightGuideY && ball.vy>0){
       ball.y=rightGuideY-2;
       ball.vy=-Math.abs(ball.vy)*0.52;
       ball.vx-=42;
     }
   }
 
-  // 3つのドレインゾーン。
-  // 左右はフリッパー外側、中央はフリッパー間。
-  const leftDrainR=W*.36;
-  const centerDrainL=W*.465;
-  const centerDrainR=W*.535;
-  const rightDrainL=W*.64;
+  const leftDrainR=W*rules.sideDrain;
+  const centerDrainL=W*(.5-rules.centerDrain);
+  const centerDrainR=W*(.5+rules.centerDrain);
+  const rightDrainL=W*(1-rules.sideDrain);
 
   if(ball.y>H-70){
     const inLeftDrain = ball.x < leftDrainR;
@@ -645,11 +678,55 @@ function update(dt){
 
 // ------------ DRAW ------------
 function drawBoard(){
+  const theme=stageTheme();
   const g=ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,"#0d2237");
-  g.addColorStop(1,"#06101d");
+
+  if(theme==="color"){
+    g.addColorStop(0,"#39145f");
+    g.addColorStop(.25,"#123e6d");
+    g.addColorStop(.5,"#0d605b");
+    g.addColorStop(.75,"#654515");
+    g.addColorStop(1,"#4a1747");
+  }else if(theme==="fire"){
+    g.addColorStop(0,"#40120b");
+    g.addColorStop(.45,"#1d0c09");
+    g.addColorStop(1,"#090504");
+  }else if(theme==="neon"){
+    g.addColorStop(0,"#17134a");
+    g.addColorStop(.5,"#071e3e");
+    g.addColorStop(1,"#05101d");
+  }else{
+    g.addColorStop(0,"#0d2237");
+    g.addColorStop(1,"#06101d");
+  }
+
   ctx.fillStyle=g;
   ctx.fillRect(0,0,W,H);
+
+  // カラフル / 炎ステージの追加演出
+  if(theme==="color"){
+    const bands=["rgba(255,80,170,.10)","rgba(90,240,255,.10)","rgba(255,220,80,.10)"];
+    bands.forEach((c,i)=>{
+      ctx.fillStyle=c;
+      ctx.fillRect(0,H*(.18+i*.22),W,H*.10);
+    });
+  }else if(theme==="fire"){
+    for(let i=0;i<10;i++){
+      const x=(i+.5)*W/10;
+      const h=22+((i*17)%35);
+      const fg=ctx.createLinearGradient(0,H-h,0,H);
+      fg.addColorStop(0,"rgba(255,220,90,0)");
+      fg.addColorStop(.5,"rgba(255,100,20,.18)");
+      fg.addColorStop(1,"rgba(255,40,10,.35)");
+      ctx.fillStyle=fg;
+      ctx.beginPath();
+      ctx.moveTo(x-18,H);
+      ctx.quadraticCurveTo(x-8,H-h*.6,x,H-h);
+      ctx.quadraticCurveTo(x+10,H-h*.55,x+18,H);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
 
   ctx.strokeStyle="rgba(94,221,255,.08)";
   ctx.lineWidth=1;
@@ -883,13 +960,19 @@ function drawMessages(){
     ctx.fillStyle="rgba(190,245,255,.72)";
     ctx.textAlign="center";
     ctx.font="700 11px system-ui";
-    ctx.fillText("フリッパー付近を左右ドラッグで移動", W/2, H-18);
+    const rules=stageRules();
+    if(rules.movable){
+      ctx.fillText("フリッパー付近を左右ドラッグで移動", W/2, H-18);
+    }else{
+      ctx.fillText("序盤はフリッパー固定", W/2, H-18);
+    }
   }
   if(stageMessageTimer>0){
     ctx.fillStyle="rgba(255,255,255,.92)";
     ctx.textAlign="center";
     ctx.font="900 26px system-ui";
-    ctx.fillText("STAGE " + stage, W/2, H*.11);
+    const themeName=stageTheme()==="color"?"COLOR STAGE":stageTheme()==="fire"?"FIRE STAGE":stageTheme()==="neon"?"NEON STAGE":"STAGE "+stage;
+    ctx.fillText(themeName, W/2, H*.11);
     ctx.font="700 14px system-ui";
     ctx.fillStyle="rgba(255,235,180,.9)";
     ctx.fillText("ENEMIES " + monsters.length + " / HP " + monsters[0].maxHp, W/2, H*.145);
@@ -910,28 +993,30 @@ function draw(){
   bumpers.forEach(drawBumper);
   monsters.forEach(drawMonster);
 
-  // 下部ガイドを短くして、左右にも落下できる隙間を作る。
+  const rules=stageRules();
+
+  // ステージ進行でガイドが短くなる
   ctx.strokeStyle="#36759a";
   ctx.lineWidth=5;
   ctx.beginPath();
   ctx.moveTo(18,H-128);
-  ctx.lineTo(W*.26,H-103);
+  ctx.lineTo(W*rules.guideEnd,H-103);
   ctx.stroke();
 
   ctx.beginPath();
   ctx.moveTo(W-18,H-128);
-  ctx.lineTo(W*.74,H-103);
+  ctx.lineTo(W*(1-rules.guideEnd),H-103);
   ctx.stroke();
 
-  // 落下可能エリアを薄く表示（左・中央・右）
+  // 落下ゾーンを表示
   const drainZones=[
-    [0,W*.36],
-    [W*.465,W*.535],
-    [W*.64,W]
+    [0,W*rules.sideDrain],
+    [W*(.5-rules.centerDrain),W*(.5+rules.centerDrain)],
+    [W*(1-rules.sideDrain),W]
   ];
   const dg=ctx.createLinearGradient(0,H-82,0,H);
-  dg.addColorStop(0,"rgba(255,95,95,.05)");
-  dg.addColorStop(1,"rgba(255,25,45,.22)");
+  dg.addColorStop(0,"rgba(255,95,95,.04)");
+  dg.addColorStop(1,"rgba(255,25,45,.20)");
   ctx.fillStyle=dg;
   drainZones.forEach(([x1,x2])=>{
     ctx.fillRect(x1,H-72,x2-x1,72);
