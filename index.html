@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>CORE BOUNCE - SINGLE FILE FIX</title>
+<title>CORE BOUNCE - MOVE FLIPPERS V5</title>
 <style>
 
 :root{--bg:#07111e;--panel:#0d1e31;--line:#65e9ff;--text:#f4fbff}
@@ -38,7 +38,7 @@ footer button:active{transform:translateY(1px);filter:brightness(1.25)}
   <header>
     <div>
       <div class="title">CORE BOUNCE</div>
-      <div class="sub">SINGLE FILE FIX</div>
+      <div class="sub">MOVE FLIPPERS V5</div>
     </div>
     <div class="hudWrap">
       <div class="hud">
@@ -57,7 +57,7 @@ footer button:active{transform:translateY(1px);filter:brightness(1.25)}
       <div class="panel">
         <div class="logoOrb"></div>
         <h1>CORE BOUNCE</h1>
-        <p>普段のテンポはそのまま。<br>フリッパーと丸バンパーの加速をかなり抑えた版。</p>
+        <p>青いバンパーは少しだけ加速。<br>フリッパー付近を左右ドラッグすると位置を動かせます。</p>
         <button id="startBtn" type="button" onclick="startGame()">START</button>
         <small>左半分タップ：左フリッパー / 右半分タップ：右フリッパー<br>STAGE 1はモンスター1発で撃破</small>
       </div>
@@ -105,6 +105,21 @@ const flippers={
   left:{x:0,y:0,len:74,angle:-0.3,rest:-0.3,active:-0.95},
   right:{x:0,y:0,len:74,angle:Math.PI+0.3,rest:Math.PI+0.3,active:Math.PI+0.95}
 };
+
+let flipperShift = 0;
+let flipperDragging = false;
+let flipperDragStartX = 0;
+let flipperShiftStart = 0;
+
+function applyFlipperPositions(){
+  // 2本のフリッパーをセットで左右移動。
+  const maxShift = W * 0.16;
+  flipperShift = clamp(flipperShift, -maxShift, maxShift);
+  flippers.left.x = W*.44 + flipperShift;
+  flippers.right.x = W*.56 + flipperShift;
+  flippers.left.y = flippers.right.y = H-78;
+}
+
 
 // ------------ AUDIO ------------
 let audioCtx=null, masterGain=null, musicTimer=null, audioEnabled=true;
@@ -221,8 +236,7 @@ function resize(){
   canvas.width=Math.floor(W*dpr);
   canvas.height=Math.floor(H*dpr);
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  flippers.left.x=W*.44; flippers.right.x=W*.56;
-  flippers.left.y=flippers.right.y=H-78;
+  applyFlipperPositions();
   resetBall(true);
   buildBoard();
   spawnStage(stage);
@@ -304,6 +318,7 @@ function resetBall(initial=false){
 function startGame(){
   try{ initAudio(); }catch(e){}
   score=0; lives=3; stage=1;
+  flipperShift=0; applyFlipperPositions();
   particles=[]; debris=[]; combo=0; comboTimer=0;
   buildBoard(); spawnStage(stage); resetBall(false);
   running=true;
@@ -327,9 +342,47 @@ for(const [id,side] of [["leftBtn","left"],["rightBtn","right"]]){
   el.addEventListener("pointerdown", e=>{ e.preventDefault(); setInput(side,true); sfx.flip(); });
   ["pointerup","pointercancel","pointerleave"].forEach(ev=>el.addEventListener(ev,()=>setInput(side,false)));
 }
-canvas.addEventListener("pointerdown", e=>{ if(!running) return; setInput(e.clientX<W/2?"left":"right", true); sfx.flip(); });
-canvas.addEventListener("pointerup", ()=>{leftPressed=false; rightPressed=false;});
-canvas.addEventListener("pointercancel", ()=>{leftPressed=false; rightPressed=false;});
+canvas.addEventListener("pointerdown", e=>{
+  if(!running) return;
+
+  const rect=canvas.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  const y=e.clientY-rect.top;
+
+  // 下部のフリッパー周辺はドラッグで横移動。
+  if(y>H*.72){
+    flipperDragging=true;
+    flipperDragStartX=x;
+    flipperShiftStart=flipperShift;
+    try{canvas.setPointerCapture(e.pointerId);}catch(err){}
+    return;
+  }
+
+  // 上側をタップした時は従来どおり左右フリップ。
+  setInput(x<W/2?"left":"right", true);
+  sfx.flip();
+});
+
+canvas.addEventListener("pointermove", e=>{
+  if(!flipperDragging) return;
+  const rect=canvas.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  flipperShift=flipperShiftStart+(x-flipperDragStartX);
+  applyFlipperPositions();
+});
+
+canvas.addEventListener("pointerup", e=>{
+  leftPressed=false;
+  rightPressed=false;
+  flipperDragging=false;
+  try{canvas.releasePointerCapture(e.pointerId);}catch(err){}
+});
+
+canvas.addEventListener("pointercancel", ()=>{
+  leftPressed=false;
+  rightPressed=false;
+  flipperDragging=false;
+});
 
 // ------------ COLLISION ------------
 function collideCircle(obj,power=1.08,points=50){
@@ -548,7 +601,7 @@ function update(dt){
 
   collideFlipper(flippers.left,leftPressed);
   collideFlipper(flippers.right,rightPressed);
-  bumpers.forEach(b=>{ if(collideCircle(b,0.96,80)) sfx.bumper(); });
+  bumpers.forEach(b=>{ if(collideCircle(b,1.035,80)) sfx.bumper(); });
 
   monsters.forEach(m=>{
     if(m.hp>0 && collideMonster(m)){
@@ -826,6 +879,12 @@ function drawParticles(){
   ctx.globalAlpha=1;
 }
 function drawMessages(){
+  if(running){
+    ctx.fillStyle="rgba(190,245,255,.72)";
+    ctx.textAlign="center";
+    ctx.font="700 11px system-ui";
+    ctx.fillText("フリッパー付近を左右ドラッグで移動", W/2, H-18);
+  }
   if(stageMessageTimer>0){
     ctx.fillStyle="rgba(255,255,255,.92)";
     ctx.textAlign="center";
