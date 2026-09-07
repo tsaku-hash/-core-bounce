@@ -152,17 +152,8 @@ function buildBoard(){
     {x:W*.50,y:H*.58,r:28}
   ];
   bars=[
-    makeBar(W*.22,H*.18,90,0.42,0.18,1.2),
-    makeBar(W*.50,H*.20,84,-0.12,0.12,1.5),
-    makeBar(W*.78,H*.18,90,-0.42,0.18,1.2),
-    makeBar(W*.26,H*.33,74,-0.82,0.18,1.3),
-    makeBar(W*.74,H*.33,74,0.82,0.18,1.3),
-    makeBar(W*.50,H*.36,88,0.55,0.16,1.1),
-    makeBar(W*.20,H*.50,80,0.25,0.16,1.4),
-    makeBar(W*.80,H*.50,80,-0.25,0.16,1.4),
-    makeBar(W*.50,H*.52,96,-0.55,0.14,1.45),
-    makeBar(W*.32,H*.66,70,0.50,0.16,1.5),
-    makeBar(W*.68,H*.66,70,-0.50,0.16,1.5),
+    makeBar(W*.26,H*.36,68,-0.62,0.08,1.0),
+    makeBar(W*.74,H*.36,68, 0.62,0.08,1.0),
   ];
 }
 function spawnStage(n){
@@ -262,24 +253,16 @@ function collideSegmentBar(bar){
     const nx=dx/d, ny=dy/d;
     ball.x=px+nx*min; ball.y=py+ny*min;
 
-    // 強めに反射
+    // 補助バーは方向を変える程度。主役は下のメインフリッパー。
     const dot=ball.vx*nx+ball.vy*ny;
     if(dot<0){
       ball.vx-=2*dot*nx;
       ball.vy-=2*dot*ny;
     }
-
-    // さらに強いブーストを足す
-    const tangentX = Math.cos(bar.angle);
-    const tangentY = Math.sin(bar.angle);
-    ball.vx += nx*180 + tangentX*90;
-    ball.vy += ny*180 + tangentY*90;
-
-    // 上方向にも少し飛びやすく
-    if(ball.vy > -220) ball.vy -= 180;
-
-    speedUpBall(560);
-    const sp=Math.hypot(ball.vx,ball.vy), maxSp=900;
+    ball.vx += nx*55;
+    ball.vy += ny*55;
+    speedUpBall(390);
+    const sp=Math.hypot(ball.vx,ball.vy), maxSp=760;
     if(sp>maxSp){
       ball.vx = ball.vx/sp*maxSp;
       ball.vy = ball.vy/sp*maxSp;
@@ -295,22 +278,45 @@ function collideSegmentBar(bar){
 }
 function collideFlipper(f,pressed){
   const target=pressed?f.active:f.rest;
-  f.angle += (target-f.angle)*0.34;
-  const x2=f.x+Math.cos(f.angle)*f.len, y2=f.y+Math.sin(f.angle)*f.len;
+  f.angle += (target-f.angle)*0.38;
+
+  const x2=f.x+Math.cos(f.angle)*f.len;
+  const y2=f.y+Math.sin(f.angle)*f.len;
   const vx=x2-f.x, vy=y2-f.y;
   const wx=ball.x-f.x, wy=ball.y-f.y;
   const t=clamp((wx*vx+wy*vy)/(vx*vx+vy*vy),0,1);
   const px=f.x+t*vx, py=f.y+t*vy;
   const dx=ball.x-px, dy=ball.y-py;
-  const d=Math.hypot(dx,dy), min=ball.r+7;
-  if(d<min && d>0 && ball.vy>-700){
+  const d=Math.hypot(dx,dy), min=ball.r+8;
+
+  if(d<min && d>0 && ball.vy>-850){
     const nx=dx/d, ny=dy/d;
-    ball.x=px+nx*min; ball.y=py+ny*min;
-    const boost=pressed?420:250;
-    ball.vx += nx*boost + (f===flippers.left?110:-110)*(pressed?1:0);
-    ball.vy = Math.min(ball.vy,-Math.abs(ny*boost)-220);
-    speedUpBall(520);
-    score+=10;
+    ball.x=px+nx*min;
+    ball.y=py+ny*min;
+
+    // 先端で打つほど大きく飛ぶ。タップ中はさらに強い。
+    const tipPower = 0.72 + t*0.95;
+    const pressPower = pressed ? 1.0 : 0.62;
+    const launch = 620 * tipPower * pressPower;
+
+    // 基本は強く上方向へ。左右のフリッパーで少し横方向も付ける。
+    const side = (f===flippers.left ? 1 : -1);
+    ball.vx = ball.vx*0.35 + side*(150 + 170*t) + nx*launch*0.42;
+    ball.vy = -Math.max(560, 640 + 320*t) - Math.abs(ny)*launch*0.28;
+
+    // フリッパー先端なら画面上部まで届く速度を保証。
+    const minLaunchSpeed = pressed ? (t>0.65 ? 760 : 680) : 520;
+    speedUpBall(minLaunchSpeed);
+
+    const sp=Math.hypot(ball.vx,ball.vy), maxSp=1080;
+    if(sp>maxSp){
+      ball.vx=ball.vx/sp*maxSp;
+      ball.vy=ball.vy/sp*maxSp;
+    }
+
+    score+=15;
+    shake=pressed ? 7 : 4;
+    addGlowBurst(ball.x,ball.y,pressed?9:5,"#c9fbff");
   }
 }
 function damageMonster(m){
