@@ -140,8 +140,15 @@ window.addEventListener("resize", resize);
 function makeBar(x,y,len,angle,amp=0.16,speed=1.2){
   return {x,y,len,angle,baseAngle:angle,amp,speed,t:Math.random()*10,thickness:14};
 }
-function makeMonster(x,y,hp){
-  return {x,y,baseY:y,hp,maxHp:hp,t:Math.random()*10,wobble:Math.random()*10};
+function makeMonster(x,y,hp,type,index){
+  return {
+    x,y,baseX:x,baseY:y,hp,maxHp:hp,
+    t:Math.random()*10,
+    phase:Math.random()*Math.PI*2,
+    type,
+    index,
+    hitFlash:0
+  };
 }
 function buildBoard(){
   bumpers=[
@@ -154,18 +161,53 @@ function buildBoard(){
   bars=[];
 }
 function spawnStage(n){
-  monsters = [
-    makeMonster(W*.20, H*.14, n),
-    makeMonster(W*.50, H*.18, n),
-    makeMonster(W*.80, H*.14, n),
+  const configs = [
+    {type:"slime",   color:"#f6a21a"},
+    {type:"bat",     color:"#a86cff"},
+    {type:"beetle",  color:"#55c66f"},
+    {type:"ghost",   color:"#56d9ff"},
+    {type:"golem",   color:"#e66d55"},
+    {type:"horned",  color:"#ffd24f"}
   ];
+
+  // Stageごとに少しずつ数を増やす。最大7体。
+  const count = Math.min(3 + Math.floor((n-1)/2), 7);
+
+  // HPは序盤は分かりやすく、後半ほどしっかり増える。
+  const baseHp = n <= 2 ? n : 2 + Math.floor((n-1)*0.8);
+
+  const slots = [
+    [0.18,0.14],[0.50,0.17],[0.82,0.14],
+    [0.30,0.30],[0.70,0.30],
+    [0.20,0.43],[0.80,0.43]
+  ];
+
+  monsters = [];
+  for(let i=0;i<count;i++){
+    const cfg = configs[(n+i-1)%configs.length];
+    let hp = baseHp;
+
+    // 5ステージごとに強敵を混ぜる
+    if(n>=5 && i===0) hp += Math.ceil(n*0.6);
+
+    const [px,py]=slots[i];
+    const m = makeMonster(W*px,H*py,hp,cfg.type,i);
+    m.color = cfg.color;
+    m.scale = (n>=5 && i===0) ? 1.28 : 1.0;
+    m.moveMode = n<=1 ? "still" :
+                 n<=3 ? (i%2===0 ? "horizontal":"still") :
+                 n<=5 ? (i%3===0 ? "vertical":"horizontal") :
+                         (i%3===0 ? "vertical" : i%3===1 ? "horizontal" : "orbit");
+    monsters.push(m);
+  }
+
   stageMessageTimer = 1.8;
   updateHud();
 }
 function resetBall(initial=false){
   ball.x=W*.5; ball.y=H-130;
-  ball.vx=initial?0:(Math.random()>.5?1:-1)*120;
-  ball.vy=initial?0:-360;
+  ball.vx=initial?0:(Math.random()>.5?1:-1)*90;
+  ball.vy=initial?0:-285;
 }
 function startGame(){
   initAudio();
@@ -215,7 +257,7 @@ function collideCircle(obj,power=1.08,points=50){
 }
 function collideMonster(m){
   // circle-ish collision for monster body
-  const r = 26;
+  const r = 26 * (m.scale || 1);
   let dx=ball.x-m.x, dy=ball.y-m.y;
   let d=Math.hypot(dx,dy);
   const min=ball.r+r;
@@ -294,18 +336,18 @@ function collideFlipper(f,pressed){
     // 先端で打つほど大きく飛ぶ。タップ中はさらに強い。
     const tipPower = 0.72 + t*0.95;
     const pressPower = pressed ? 1.0 : 0.62;
-    const launch = 620 * tipPower * pressPower;
+    const launch = 520 * tipPower * pressPower;
 
     // 基本は強く上方向へ。左右のフリッパーで少し横方向も付ける。
     const side = (f===flippers.left ? 1 : -1);
     ball.vx = ball.vx*0.35 + side*(150 + 170*t) + nx*launch*0.42;
-    ball.vy = -Math.max(560, 640 + 320*t) - Math.abs(ny)*launch*0.28;
+    ball.vy = -Math.max(470, 540 + 250*t) - Math.abs(ny)*launch*0.24;
 
     // フリッパー先端なら画面上部まで届く速度を保証。
-    const minLaunchSpeed = pressed ? (t>0.65 ? 760 : 680) : 520;
+    const minLaunchSpeed = pressed ? (t>0.65 ? 640 : 580) : 470;
     speedUpBall(minLaunchSpeed);
 
-    const sp=Math.hypot(ball.vx,ball.vy), maxSp=1080;
+    const sp=Math.hypot(ball.vx,ball.vy), maxSp=820;
     if(sp>maxSp){
       ball.vx=ball.vx/sp*maxSp;
       ball.vy=ball.vy/sp*maxSp;
@@ -319,6 +361,7 @@ function collideFlipper(f,pressed){
 function damageMonster(m){
   if(m.hp<=0) return;
   m.hp--;
+  m.hitFlash=.14;
   combo++;
   comboTimer=1.25;
   score += 150 * combo;
@@ -343,9 +386,31 @@ function update(dt){
   if(comboTimer<=0){ comboTimer=0; combo=0; }
   if(stageMessageTimer>0) stageMessageTimer -= dt;
 
-  monsters.forEach(m=>{ m.t += dt; m.y = m.baseY + Math.sin(m.t*1.7 + m.wobble)*6; });
+  monsters.forEach(m=>{
+    m.t += dt;
+    if(m.hitFlash>0) m.hitFlash -= dt;
 
-  ball.vy += 520*dt;
+    const difficulty = Math.min(stage,10);
+    const ampX = 10 + difficulty*2.5;
+    const ampY = 7 + difficulty*1.6;
+    const speed = 0.9 + difficulty*0.09;
+
+    if(m.moveMode==="horizontal"){
+      m.x = m.baseX + Math.sin(m.t*speed + m.phase)*ampX;
+      m.y = m.baseY;
+    }else if(m.moveMode==="vertical"){
+      m.x = m.baseX;
+      m.y = m.baseY + Math.sin(m.t*speed + m.phase)*ampY;
+    }else if(m.moveMode==="orbit"){
+      m.x = m.baseX + Math.cos(m.t*speed + m.phase)*ampX*.8;
+      m.y = m.baseY + Math.sin(m.t*speed + m.phase)*ampY*.8;
+    }else{
+      m.x = m.baseX;
+      m.y = m.baseY;
+    }
+  });
+
+  ball.vy += 430*dt;
   ball.x += ball.vx*dt;
   ball.y += ball.vy*dt;
 
@@ -353,11 +418,31 @@ function update(dt){
   if(ball.x+ball.r>W-12){ ball.x=W-12-ball.r; ball.vx=-Math.abs(ball.vx)*.94; }
   if(ball.y-ball.r<10){ ball.y=10+ball.r; ball.vy=Math.abs(ball.vy)*.94; }
 
-  if(ball.y>H-135){
-    const leftGuideY=H-126+(ball.x-20)*.22;
-    const rightGuideY=H-126+(W-20-ball.x)*.22;
-    if(ball.x<W*.36 && ball.y>leftGuideY && ball.vy>0){ ball.vy=-290; ball.vx+=100; }
-    if(ball.x>W*.64 && ball.y>rightGuideY && ball.vy>0){ ball.vy=-290; ball.vx-=100; }
+  // 下部の左右レーン。中央は落下穴として空ける。
+  if(ball.y>H-150 && ball.y<H-72){
+    const leftGuideY = H-132 + (ball.x-18)*0.20;
+    const rightGuideY = H-132 + (W-18-ball.x)*0.20;
+
+    // 左外側ガイド
+    if(ball.x<W*.31 && ball.y>leftGuideY && ball.vy>0){
+      ball.y=leftGuideY-2;
+      ball.vy=-Math.abs(ball.vy)*0.62;
+      ball.vx+=55;
+    }
+
+    // 右外側ガイド
+    if(ball.x>W*.69 && ball.y>rightGuideY && ball.vy>0){
+      ball.y=rightGuideY-2;
+      ball.vy=-Math.abs(ball.vy)*0.62;
+      ball.vx-=55;
+    }
+  }
+
+  // 中央の落下穴。ここを抜けたら1ライフ減る。
+  const drainLeft=W*.35;
+  const drainRight=W*.65;
+  if(ball.y>H-70 && ball.x>drainLeft && ball.x<drainRight){
+    ball.y=H+60;
   }
 
   collideFlipper(flippers.left,leftPressed);
@@ -465,92 +550,152 @@ function drawMonster(m){
 
   const hpRatio = m.hp / m.maxHp;
   const damage = 1-hpRatio;
+  const s = m.scale || 1;
 
   ctx.save();
   ctx.translate(m.x,m.y);
+  ctx.scale(s,s);
 
-  ctx.shadowBlur=18;
-  ctx.shadowColor="#ffb14d";
+  if(m.hitFlash>0){
+    ctx.shadowBlur=30;
+    ctx.shadowColor="#ffffff";
+  }else{
+    ctx.shadowBlur=16;
+    ctx.shadowColor=m.color;
+  }
 
-  // body blob
-  ctx.fillStyle = "#f1a128";
-  ctx.beginPath();
-  ctx.moveTo(-18,-18);
-  ctx.quadraticCurveTo(0,-30,18,-18);
-  ctx.quadraticCurveTo(28,-4,22,16);
-  ctx.lineTo(12,24);
-  ctx.lineTo(4,16);
-  ctx.lineTo(-4,24);
-  ctx.lineTo(-12,16);
-  ctx.lineTo(-22,24);
-  ctx.quadraticCurveTo(-30,2,-18,-18);
-  ctx.closePath();
-  ctx.fill();
+  const c=m.color;
 
-  // horns / spikes
-  ctx.fillStyle = "#ffd27a";
-  for(let i=-1;i<=1;i++){
-    const sx = i*10;
+  // 種類ごとにシルエットを変える
+  if(m.type==="slime"){
+    ctx.fillStyle=c;
     ctx.beginPath();
-    ctx.moveTo(sx-4,-20);
-    ctx.lineTo(sx,-30-rand(0,2));
-    ctx.lineTo(sx+4,-20);
+    ctx.moveTo(-24,14);
+    ctx.quadraticCurveTo(-28,-12,0,-24);
+    ctx.quadraticCurveTo(28,-12,24,14);
+    ctx.quadraticCurveTo(12,24,0,18);
+    ctx.quadraticCurveTo(-12,24,-24,14);
+    ctx.fill();
+  }else if(m.type==="bat"){
+    ctx.fillStyle=c;
+    ctx.beginPath();
+    ctx.moveTo(-8,-10);
+    ctx.quadraticCurveTo(-22,-26,-32,-10);
+    ctx.lineTo(-20,-4);
+    ctx.lineTo(-30,8);
+    ctx.quadraticCurveTo(-14,12,-5,6);
+    ctx.quadraticCurveTo(0,18,5,6);
+    ctx.quadraticCurveTo(14,12,30,8);
+    ctx.lineTo(20,-4);
+    ctx.lineTo(32,-10);
+    ctx.quadraticCurveTo(22,-26,8,-10);
     ctx.closePath();
+    ctx.fill();
+  }else if(m.type==="beetle"){
+    ctx.fillStyle=c;
+    ctx.beginPath();
+    ctx.ellipse(0,2,22,28,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle="rgba(0,0,0,.3)";
+    ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(0,-24);ctx.lineTo(0,26);ctx.stroke();
+    ctx.lineWidth=4;
+    [-12,0,12].forEach(y=>{
+      ctx.beginPath();ctx.moveTo(-18,y);ctx.lineTo(-31,y-7);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(18,y);ctx.lineTo(31,y-7);ctx.stroke();
+    });
+  }else if(m.type==="ghost"){
+    ctx.fillStyle=c;
+    ctx.beginPath();
+    ctx.arc(0,-3,23,Math.PI,0);
+    ctx.lineTo(23,18);
+    ctx.lineTo(12,11);
+    ctx.lineTo(3,20);
+    ctx.lineTo(-7,11);
+    ctx.lineTo(-18,20);
+    ctx.lineTo(-23,18);
+    ctx.closePath();
+    ctx.fill();
+  }else if(m.type==="golem"){
+    ctx.fillStyle=c;
+    ctx.fillRect(-23,-20,46,40);
+    ctx.fillStyle="rgba(255,255,255,.15)";
+    ctx.fillRect(-18,-15,14,10);
+    ctx.fillRect(4,-15,14,10);
+    ctx.strokeStyle="rgba(0,0,0,.25)";
+    ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(-22,0);ctx.lineTo(-10,8);ctx.lineTo(-2,2);ctx.lineTo(8,10);ctx.stroke();
+  }else{
+    // horned
+    ctx.fillStyle=c;
+    ctx.beginPath();
+    ctx.moveTo(-22,15);
+    ctx.lineTo(-18,-13);
+    ctx.lineTo(-28,-28);
+    ctx.lineTo(-7,-20);
+    ctx.quadraticCurveTo(0,-25,7,-20);
+    ctx.lineTo(28,-28);
+    ctx.lineTo(18,-13);
+    ctx.lineTo(22,15);
+    ctx.quadraticCurveTo(0,25,-22,15);
     ctx.fill();
   }
 
   // damage chips
   if(damage>0.05){
     ctx.save();
-    ctx.globalCompositeOperation = "destination-out";
-    const holes = Math.floor(damage*6);
+    ctx.globalCompositeOperation="destination-out";
+    const holes=Math.floor(damage*6);
     for(let i=0;i<holes;i++){
-      const rx = -12 + i*8;
-      const ry = -10 + (i%2)*12;
+      const rx=-13+(i*9)%26;
+      const ry=-10+(i%3)*10;
       ctx.beginPath();
-      ctx.arc(rx,ry,3 + (i%2),0,Math.PI*2);
+      ctx.arc(rx,ry,3+(i%2),0,Math.PI*2);
       ctx.fill();
     }
     ctx.restore();
   }
 
   // eyes
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(-10,-4,5,8);
-  ctx.fillRect(5,-4,5,8);
+  ctx.shadowBlur=0;
+  ctx.fillStyle="#fff";
+  ctx.fillRect(-10,-5,6,8);
+  ctx.fillRect(4,-5,6,8);
+  ctx.fillStyle="#1b2530";
+  ctx.fillRect(-8,-2,2,4);
+  ctx.fillRect(6,-2,2,4);
 
   // mouth
-  ctx.strokeStyle = "#713f00";
-  ctx.lineWidth = 3;
+  ctx.strokeStyle="#2b1b16";
+  ctx.lineWidth=3;
   ctx.beginPath();
-  ctx.moveTo(-8,10);
-  ctx.quadraticCurveTo(0,14+damage*8,8,10);
+  if(stage<4){
+    ctx.moveTo(-8,9); ctx.quadraticCurveTo(0,14,8,9);
+  }else{
+    ctx.moveTo(-8,12); ctx.lineTo(-3,8); ctx.lineTo(2,12); ctx.lineTo(7,8);
+  }
   ctx.stroke();
 
   // cracks
-  ctx.strokeStyle = "rgba(255,245,220,.8)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle="rgba(255,255,255,.75)";
+  ctx.lineWidth=2;
   for(let i=0;i<Math.floor(damage*5);i++){
-    const a = i*1.2 + damage*2;
+    const a=i*1.3+damage;
     ctx.beginPath();
-    ctx.moveTo(Math.cos(a)*4, Math.sin(a)*4);
-    ctx.lineTo(Math.cos(a)*12, Math.sin(a)*12);
-    ctx.lineTo(Math.cos(a+.2)*18, Math.sin(a+.2)*18);
+    ctx.moveTo(Math.cos(a)*5,Math.sin(a)*5);
+    ctx.lineTo(Math.cos(a)*15,Math.sin(a)*15);
     ctx.stroke();
   }
 
-  ctx.shadowBlur=0;
-
-  // HP number
+  // HP
   ctx.fillStyle="rgba(255,255,255,.95)";
   ctx.font="bold 10px system-ui";
   ctx.textAlign="center";
   ctx.fillText(String(m.hp),0,-34);
 
-  // HP bar
   ctx.fillStyle="rgba(255,255,255,.16)";
   ctx.fillRect(-18,30,36,4);
-  ctx.fillStyle="#ffbd62";
+  ctx.fillStyle=c;
   ctx.fillRect(-18,30,36*hpRatio,4);
 
   ctx.restore();
@@ -587,7 +732,7 @@ function drawMessages(){
     ctx.fillText("STAGE " + stage, W/2, H*.11);
     ctx.font="700 14px system-ui";
     ctx.fillStyle="rgba(255,235,180,.9)";
-    ctx.fillText("MONSTER HP " + stage, W/2, H*.145);
+    ctx.fillText("ENEMIES " + monsters.length + " / HP " + monsters[0].maxHp, W/2, H*.145);
   }
   if(combo>1 && comboTimer>0){
     ctx.fillStyle="rgba(255,245,200,.95)";
@@ -605,9 +750,25 @@ function draw(){
   bumpers.forEach(drawBumper);
   monsters.forEach(drawMonster);
 
-  ctx.strokeStyle="#36759a"; ctx.lineWidth=5;
-  ctx.beginPath(); ctx.moveTo(18,H-120); ctx.lineTo(W*.32,H-92); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(W-18,H-120); ctx.lineTo(W*.68,H-92); ctx.stroke();
+  // 下部ガイド。中央は明確に落下穴として空ける。
+  ctx.strokeStyle="#36759a";
+  ctx.lineWidth=5;
+  ctx.beginPath(); ctx.moveTo(18,H-128); ctx.lineTo(W*.31,H-98); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W-18,H-128); ctx.lineTo(W*.69,H-98); ctx.stroke();
+
+  // 落下穴の表示
+  const drainL=W*.35, drainR=W*.65;
+  const dg=ctx.createLinearGradient(0,H-85,0,H);
+  dg.addColorStop(0,"rgba(255,90,90,.12)");
+  dg.addColorStop(1,"rgba(255,20,40,.30)");
+  ctx.fillStyle=dg;
+  ctx.fillRect(drainL,H-72,drainR-drainL,72);
+  ctx.strokeStyle="rgba(255,105,105,.55)";
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(drainL,H-72);ctx.lineTo(drainL,H-18);
+  ctx.moveTo(drainR,H-72);ctx.lineTo(drainR,H-18);
+  ctx.stroke();
 
   drawFlipper(flippers.left);
   drawFlipper(flippers.right);
