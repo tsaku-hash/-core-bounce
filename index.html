@@ -185,12 +185,60 @@ img{-webkit-user-drag:none;user-drag:none;-webkit-touch-callout:none}.monkeyImg,
 .theme-jungle .themeLayer{opacity:.30!important;background:radial-gradient(circle at 2% 15%,#0b5c2a 0 11%,transparent 12%),radial-gradient(circle at 98% 24%,#0b5629 0 13%,transparent 14%),linear-gradient(#0d3d1e22,#1a6d2b08 55%,#05301618)!important}
 .theme-jungle .chickenBlink{filter:drop-shadow(0 2px 2px #244b2640)}
 
+
+/* v39: jungle objects are game-rendered SVG/DOM, not rectangular raster cutouts */
+.theme-jungle .monkeyImg{display:none!important}
+.jungleOrangutan{display:none;width:100%;height:auto;overflow:visible;pointer-events:none;transform-origin:50% 72%}
+.theme-jungle .jungleOrangutan{display:block}
+.theme-jungle .monkeyWrap{width:34%!important;max-width:205px!important;top:3.1%!important;filter:drop-shadow(0 10px 7px #102b1844)!important}
+.theme-jungle .monkeyWrap.patrolLeft .jungleOrangutan{transform:scaleX(-1)}
+.theme-jungle .monkeyWrap.dropping .jungleOrangutan{animation:orangDrop .52s ease-in-out}
+@keyframes orangDrop{0%,100%{transform:translateY(0)}35%{transform:translateY(9px) rotate(-4deg)}65%{transform:translateY(4px) rotate(3deg)}}
+.jungleOrangutan .armL,.jungleOrangutan .armR{transform-box:fill-box;transform-origin:50% 20%}
+.theme-jungle .monkeyWrap.dropping .jungleOrangutan .armR{animation:orangArm .52s ease-in-out}
+@keyframes orangArm{0%,100%{transform:rotate(0)}40%{transform:rotate(20deg) translateY(4px)}70%{transform:rotate(-6deg)}}
+.theme-jungle .jungleHaz{background:none!important;border:0!important;box-shadow:none!important;overflow:visible!important;display:block!important;padding:0!important;filter:drop-shadow(0 10px 7px #102b1848) drop-shadow(0 2px 1px #ffffff80)!important;-webkit-mask-image:none!important;mask-image:none!important}
+.theme-jungle .jungleHaz svg{display:block;width:100%;height:100%;overflow:visible}
+.theme-jungle .haz-snake{width:74px!important;height:86px!important}
+.theme-jungle .haz-coconut{width:67px!important;height:72px!important}
+.theme-jungle .haz-spiky{width:74px!important;height:74px!important}
+.theme-jungle .haz-snake .snakeHead{transform-box:fill-box;transform-origin:center;animation:snakeHead .42s ease-in-out infinite alternate}
+@keyframes snakeHead{to{transform:rotate(8deg) translateX(2px)}}
+.theme-jungle .haz-coconut .shine{animation:cocoShine .7s ease-in-out infinite alternate}
+@keyframes cocoShine{to{opacity:.8}}
+.theme-jungle .haz-spiky .core{animation:spikyPulse .5s ease-in-out infinite alternate}
+@keyframes spikyPulse{to{filter:brightness(1.08)}}
+#play.theme-jungle:before{height:42px!important;background:linear-gradient(180deg,#966039,#6f3d1e 42%,#472511 70%,#2c1609)!important;box-shadow:inset 0 5px 0 #b87a47aa,inset 0 -5px 0 #2a160c88,0 9px 0 #274b1c4a,0 14px 18px #071d0d55!important}
+#play.theme-jungle .themeLayer:before,#play.theme-jungle .themeLayer:after{content:"";position:absolute;top:1%;width:18px;height:30%;z-index:3;opacity:.7;background:repeating-linear-gradient(90deg,#285f22 0 3px,#4d8b2e 3px 6px);border-radius:50%;filter:blur(.2px)}
+#play.theme-jungle .themeLayer:before{left:8%;transform:rotate(8deg)}
+#play.theme-jungle .themeLayer:after{right:10%;transform:rotate(-10deg)}
+
 </style></head><body><div class="app" id="app">
-<div class="top"><div class="brand"><div class="title">🌈 レインボーたまご あつめ</div><div class="sub">v33ベース・ジャングル作り込み v38</div></div><div class="pill" id="stagePill">STAGE 1</div><div class="pill">⏱️ <span id="time">30</span></div><div class="pill">🥚 <span id="score">0</span>/<span id="target">20</span></div></div>
+<div class="top"><div class="brand"><div class="title">🌈 レインボーたまご あつめ</div><div class="sub">v33ベース・ジャングルゲーム化 v39</div></div><div class="pill" id="stagePill">STAGE 1</div><div class="pill">⏱️ <span id="time">30</span></div><div class="pill">🥚 <span id="score">0</span>/<span id="target">20</span></div></div>
 <div class="play" id="play"><div class="shade"></div><div class="themeLayer" id="themeLayer"></div><div class="themeLabel" id="themeLabel">🌾 FARM</div><button class="pauseBtn" id="pauseBtn" aria-label="ストップ">⏸</button>
-<div class="monkeyWrap" id="monkeyWrap"><img class="monkeyImg" id="monkey" draggable="false"><div class="monkeyBlink"><i></i><i></i></div></div>
+<div class="monkeyWrap" id="monkeyWrap"><img class="monkeyImg" id="monkey" draggable="false"><svg class="jungleOrangutan" id="jungleOrangutan" viewBox="0 0 220 155" aria-hidden="true">
+<defs>
+ <radialGradient id="fur" cx="38%" cy="26%" r="78%"><stop stop-color="#ff9b45"/><stop offset=".52" stop-color="#de6b23"/><stop offset="1" stop-color="#9e4319"/></radialGradient>
+ <radialGradient id="face" cx="42%" cy="28%" r="70%"><stop stop-color="#ffd7a8"/><stop offset="1" stop-color="#d8945d"/></radialGradient>
+</defs>
+<g class="armL"><path d="M72 75C47 69 27 73 13 91c-8 11-2 24 11 20 15-5 24-18 37-21z" fill="url(#fur)"/><ellipse cx="17" cy="100" rx="14" ry="10" fill="#ba5520"/></g>
+<g class="armR"><path d="M147 73c25-8 48-3 58 17 6 12-4 22-16 16-13-7-20-18-32-22z" fill="url(#fur)"/><ellipse cx="199" cy="98" rx="13" ry="10" fill="#ba5520"/></g>
+<ellipse cx="109" cy="88" rx="57" ry="47" fill="url(#fur)"/>
+<ellipse cx="110" cy="78" rx="43" ry="37" fill="url(#face)"/>
+<ellipse cx="78" cy="74" rx="11" ry="15" fill="#9f431a"/><ellipse cx="142" cy="74" rx="11" ry="15" fill="#9f431a"/>
+<ellipse cx="95" cy="75" rx="8" ry="10" fill="#fff"/><ellipse cx="125" cy="75" rx="8" ry="10" fill="#fff"/>
+<circle cx="97" cy="77" r="4.3" fill="#302016"/><circle cx="123" cy="77" r="4.3" fill="#302016"/>
+<circle cx="98.2" cy="75.5" r="1.3" fill="#fff"/><circle cx="124.2" cy="75.5" r="1.3" fill="#fff"/>
+<ellipse cx="110" cy="89" rx="9" ry="7" fill="#6d341f"/>
+<path d="M86 93c8 21 40 23 49 0 0 21-12 31-25 31S87 114 86 93z" fill="#5d281e"/>
+<path d="M95 105c8 7 21 7 30 0" fill="none" stroke="#ff8d7e" stroke-width="5" stroke-linecap="round"/>
+<path d="M69 42c12-28 71-29 84 0-15-9-28-13-42-13-15 0-29 4-42 13z" fill="#ef7a28"/>
+<path d="M75 46c7-15 18-23 34-25M145 47c-6-16-18-24-34-26" stroke="#ffb65d" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+<path d="M74 124c-9 5-14 13-16 23M146 123c10 5 15 13 17 24" stroke="#a5471d" stroke-width="18" stroke-linecap="round"/>
+<ellipse cx="59" cy="146" rx="14" ry="7" fill="#6e3119"/><ellipse cx="164" cy="146" rx="14" ry="7" fill="#6e3119"/>
+</svg><div class="monkeyBlink"><i></i><i></i></div></div>
 <div class="chickenBlink c1"><i></i><i></i></div><div class="chickenBlink c2"><i></i><i></i></div><div class="chickenBlink c3"><i></i><i></i></div>
-<img class="player" id="player" alt="" draggable="false"><div class="notice hide" id="notice"></div><div class="debugmark">HQ 2.5D v38</div></div>
+<img class="player" id="player" alt="" draggable="false"><div class="notice hide" id="notice"></div><div class="debugmark">HQ 2.5D v39</div></div>
 <div class="controls"><button class="btn left" id="leftBtn">◀ ひだり</button><button class="btn right" id="rightBtn">みぎ ▶</button></div>
 <div class="overlay" id="startOverlay"><div class="card">
 <div class="hero" id="startHero"></div>
@@ -430,8 +478,8 @@ function applyStageTheme(){
   document.getElementById('themeLabel').textContent=`${info.emoji} ${info.jp}`;
   play.style.backgroundImage=`url(${jungle?J.bg:A.bg})`;play.style.backgroundSize=jungle?'100% 100%':'';play.style.backgroundPosition=jungle?'center top':'';
   document.getElementById('clearOverlay').style.backgroundImage=`linear-gradient(#6a547855,#6a547855),url(${jungle?J.bg:A.bg})`;
-  monkey.src=jungle?J.orangutan:A.monkey;
-  monkeyWrap.classList.toggle('jungleDropper',jungle);
+  monkey.src=A.monkey;
+  monkeyWrap.classList.toggle('jungleDropper',jungle);monkeyWrap.classList.toggle('patrolLeft',jungle&&monkeyDir<0);
   monkeyWrap.style.width=jungle?'38%':'';
   monkeyWrap.style.maxWidth=jungle?'225px':'';
   const blink=monkeyWrap.querySelector('.monkeyBlink');if(blink)blink.style.display=jungle?'none':'';
@@ -509,6 +557,13 @@ function spawnEgg(){
   if(Math.random()<.35)cluck()
 }
 function spawnTimeEgg(){if(timeEggSpawned||bonus)return;timeEggSpawned=true;const el=document.createElement('img');el.className='obj timeEgg';el.draggable=false;el.ondragstart=()=>false;el.src=makeEgg('#fffbd0','#ffd938','stars');play.appendChild(el);const lane=Math.floor(Math.random()*3),d=difficulty();objs.push({el,type:'time',lane,p:0,speed:d.eggSpeed*.92,rot:Math.random()*40});const n=document.getElementById('notice');n.textContent='✨ ひかるたまご！ とると＋5びょう';n.classList.remove('hide');setTimeout(()=>n.classList.add('hide'),1500)}
+
+function jungleHazSVG(kind){
+ if(kind==='snake')return `<svg viewBox="0 0 90 105" aria-hidden="true"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b7ef55"/><stop offset=".5" stop-color="#5dbd2a"/><stop offset="1" stop-color="#258a2b"/></linearGradient></defs><path d="M48 96C17 91 20 66 45 63c25-4 29-19 12-28-15-8-30-2-36 8" fill="none" stroke="#347d22" stroke-width="18" stroke-linecap="round"/><path d="M48 94C22 89 26 70 46 68c20-3 28-14 14-24-11-8-23-4-29 3" fill="none" stroke="url(#sg)" stroke-width="13" stroke-linecap="round"/><g class="snakeHead"><ellipse cx="28" cy="38" rx="20" ry="17" fill="#74c930" stroke="#d8ff83" stroke-width="3"/><ellipse cx="21" cy="34" rx="4" ry="5" fill="#fff"/><ellipse cx="34" cy="34" rx="4" ry="5" fill="#fff"/><circle cx="22" cy="35" r="2" fill="#241d18"/><circle cx="33" cy="35" r="2" fill="#241d18"/><path d="M25 46c4 3 8 3 11 0" fill="none" stroke="#4b281e" stroke-width="2" stroke-linecap="round"/><path d="M27 50l-4 9m4-9 5 8" stroke="#ed3c4a" stroke-width="2" stroke-linecap="round"/></g><path d="M36 58l8 7m-3-22l7 5m6 8l7 5m-16 23l8 4" stroke="#d7ef55" stroke-width="4" stroke-linecap="round"/></svg>`;
+ if(kind==='coconut')return `<svg viewBox="0 0 90 90" aria-hidden="true"><defs><radialGradient id="cg" cx="35%" cy="25%" r="75%"><stop stop-color="#b97842"/><stop offset=".55" stop-color="#7b431f"/><stop offset="1" stop-color="#4d2816"/></radialGradient></defs><ellipse cx="45" cy="49" rx="30" ry="34" fill="url(#cg)"/><path d="M26 23c11-10 28-13 43-4" stroke="#d69b62" stroke-width="5" stroke-linecap="round" opacity=".55"/><path d="M26 36c14-7 28-8 42-2M25 50c14-6 30-7 42-1M29 65c12-5 24-5 34-2" fill="none" stroke="#5d2f17" stroke-width="3" opacity=".75"/><ellipse class="shine" cx="34" cy="31" rx="8" ry="12" fill="#fff" opacity=".22"/><circle cx="36" cy="17" r="3" fill="#372117"/><circle cx="46" cy="15" r="3" fill="#372117"/><circle cx="55" cy="18" r="3" fill="#372117"/></svg>`;
+ return `<svg viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="pg" cx="35%" cy="28%" r="72%"><stop stop-color="#f6ba44"/><stop offset=".42" stop-color="#d2762a"/><stop offset="1" stop-color="#8b381c"/></radialGradient></defs><g fill="#a44420" stroke="#f0a43a" stroke-width="2"><path d="M50 2l7 20H43z"/><path d="M50 98l7-20H43z"/><path d="M2 50l20-7v14z"/><path d="M98 50l-20-7v14z"/><path d="M16 16l20 9-10 10z"/><path d="M84 16L64 25l10 10z"/><path d="M16 84l20-9-10-10z"/><path d="M84 84l-20-9 10-10z"/></g><circle class="core" cx="50" cy="50" r="31" fill="url(#pg)" stroke="#7b2d19" stroke-width="4"/><g fill="#672919"><circle cx="39" cy="38" r="4"/><circle cx="59" cy="34" r="3.5"/><circle cx="66" cy="54" r="4"/><circle cx="43" cy="62" r="3.5"/><circle cx="30" cy="51" r="3"/></g><ellipse cx="39" cy="34" rx="8" ry="11" fill="#fff" opacity=".18"/></svg>`;
+}
+
 function chooseHaz(){
   const r=Math.random();
   if(stage===2){return r<.42?['snake',J.snake,1.0]:r<.78?['coconut',J.coconut,1.0]:['spiky',J.spiky,2.0]}
@@ -522,7 +577,7 @@ function spawnHaz(){
    laneCenters.forEach((x,i)=>{const d=Math.abs(x-monkeyX);if(d<best){best=d;lane=i}});
    monkeyWrap.style.transition='';
    monkeyWrap.classList.add('dropping');setTimeout(()=>monkeyWrap.classList.remove('dropping'),620);
-   setTimeout(()=>{if(!running)return;const el=document.createElement('img');el.className=`obj haz jungleHaz haz-${kind}`;el.draggable=false;el.ondragstart=()=>false;el.src=src;play.appendChild(el);const d=difficulty();objs.push({el,type:'haz',kind,lane,p:0,speed:d.hazSpeed,st});},260);
+   setTimeout(()=>{if(!running)return;const el=document.createElement('div');el.className=`obj haz jungleHaz haz-${kind}`;el.innerHTML=jungleHazSVG(kind);play.appendChild(el);const d=difficulty();objs.push({el,type:'haz',kind,lane,p:0,speed:d.hazSpeed,st});},260);
    return;
  }
  const lane=Math.floor(Math.random()*3);monkeyX=[.18,.5,.82][lane];monkeyWrap.style.transition='left .34s ease-out';monkeyWrap.style.left=`${monkeyX*100}%`;monkeyWrap.classList.add('dropping');setTimeout(()=>monkeyWrap.classList.remove('dropping'),760);setTimeout(()=>{if(!running)return;const el=document.createElement('img');el.className='obj haz';el.draggable=false;el.ondragstart=()=>false;el.src=src;play.appendChild(el);const d=difficulty();objs.push({el,type:'haz',kind,lane,p:0,speed:d.hazSpeed,st});},440)
@@ -602,7 +657,7 @@ if(combo>0&&lastEggAt&&performance.now()-lastEggAt>2400)resetCombo();eggClock-=d
     eggClock=Math.max(stage>=11?.43:.48,d.eggGap)+(Math.random()*jitter);
   }
 }if(!bonus&&hazClock<=0){spawnHaz();hazClock=(stage===2?Math.max(2.15,d.hazGap)+Math.random()*.65:Math.max(1.85,d.hazGap)+Math.random()*.75);setTimeout(()=>{monkeyWrap.style.transition='';},760)}if(!bonus&&!timeEggSpawned&&timeEggAt<=0)spawnTimeEgg();if(!musicFast&&timeLeft<=10){setMusicTempo(true);const n=document.getElementById('notice');n.textContent='🔥 ラスト10びょう！ BGMスピードアップ！';n.classList.remove('hide');setTimeout(()=>n.classList.add('hide'),1100)}
-for(const o of [...objs]){o.p+=o.speed*dt;const pos=objPos(o);const size=(o.type==='egg'||o.type==='time'||o.type==='secret')?70:58;o.el.style.width=size+'px';o.el.style.left=pos.x+'px';o.el.style.top=pos.y+'px';let rot=(o.type==='egg'||o.type==='time'||o.type==='secret')?(Math.sin(o.p*12+o.rot)*7):0;let drift=0;if(stage===2&&o.type==='haz'){if(o.kind==='snake'){rot=Math.sin(o.p*15)*12;drift=Math.sin(o.p*10)*10}else if(o.kind==='coconut'){rot=o.p*260}else if(o.kind==='spiky'){rot=-o.p*340;drift=Math.sin(o.p*8)*5}}const squash=1;o.el.style.transform=`translate(calc(-50% + ${drift}px),-50%) scale(${pos.scale*squash}) rotate(${rot}deg)`;if(pos.y<play.clientHeight+20&&hit(o,pos)){if(o.type==='egg')onEgg(o,pos);else if(o.type==='time')onTime(o,pos);else if(o.type==='secret')onSecret(o,pos);else onHaz(o,pos);continue}if(pos.y>play.clientHeight+90||o.p>1.45){if(o.type==='egg')resetCombo();removeObj(o)}}
+for(const o of [...objs]){o.p+=o.speed*dt;const pos=objPos(o);const size=(o.type==='egg'||o.type==='time'||o.type==='secret')?70:58;if(!(stage===2&&o.type==='haz'))o.el.style.width=size+'px';o.el.style.left=pos.x+'px';o.el.style.top=pos.y+'px';let rot=(o.type==='egg'||o.type==='time'||o.type==='secret')?(Math.sin(o.p*12+o.rot)*7):0;let drift=0;if(stage===2&&o.type==='haz'){if(o.kind==='snake'){rot=Math.sin(o.p*15)*12;drift=Math.sin(o.p*10)*10}else if(o.kind==='coconut'){rot=o.p*260}else if(o.kind==='spiky'){rot=-o.p*340;drift=Math.sin(o.p*8)*5}}const squash=1;o.el.style.transform=`translate(calc(-50% + ${drift}px),-50%) scale(${pos.scale*squash}) rotate(${rot}deg)`;if(pos.y<play.clientHeight+20&&hit(o,pos)){if(o.type==='egg')onEgg(o,pos);else if(o.type==='time')onTime(o,pos);else if(o.type==='secret')onSecret(o,pos);else onHaz(o,pos);continue}if(pos.y>play.clientHeight+90||o.p>1.45){if(o.type==='egg')resetCombo();removeObj(o)}}
 timeLeft-=dt;if(musicFast&&timeLeft>10.15)setMusicTempo(false);if(timerClock>.15){timerClock=0;updateUI()}if(timeLeft<=0){timeLeft=0;updateUI();finishStage(score>=target);return}raf=requestAnimationFrame(loop)}
 function bindHold(btn,dir){const down=e=>{e.preventDefault();input=dir;ensureAudio()};const up=e=>{e.preventDefault();if(input===dir)input=0};btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('pointerleave',up)}bindHold(document.getElementById('leftBtn'),-1);bindHold(document.getElementById('rightBtn'),1);
 let sx=null;play.addEventListener('pointerdown',e=>{sx=e.clientX;ensureAudio()});play.addEventListener('pointermove',e=>{if(sx==null)return;let dx=e.clientX-sx;input=Math.abs(dx)<8?0:Math.sign(dx)});play.addEventListener('pointerup',()=>{sx=null;input=0});play.addEventListener('pointercancel',()=>{sx=null;input=0});
