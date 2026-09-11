@@ -1,0 +1,21 @@
+{
+  "name": "レインボーたまご あつめ",
+  "short_name": "レインボーたまご",
+  "start_url": "/-core-bounce/",
+  "scope": "/-core-bounce/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#bfefff",
+  "icons": [
+    {
+      "src": "/-core-bounce/icon-192-v75.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/-core-bounce/icon-512-v75.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
